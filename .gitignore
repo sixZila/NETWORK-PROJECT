@@ -1,0 +1,13 @@
+build/built-jar.properties
+build/classes/.netbeans_automatic_build
+build/classes/Client/ClientInputListener.class
+build/classes/.netbeans_update_resources
+build/classes/justinepls/Main.class
+build/classes/Client/ClientOutputListener.class
+build/classes/Server/ServerIOListener.class
+build/classes/justinepls/Peer.class
+dist/JustinePls.jar
+build/classes/Server/UDPThread.class
+dist/README.TXT
+nbproject/private/private.properties
+nbproject/private/private.xml
