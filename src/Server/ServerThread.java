@@ -16,7 +16,7 @@ import java.util.HashMap;
 public class ServerThread implements Runnable {
 
     private ServerSocket server;
-    private HashMap<String, Socket> clientList;
+    private HashMap<String, User> clientList;
 
     public ServerThread() {
         clientList = new HashMap<>();
@@ -26,7 +26,7 @@ public class ServerThread implements Runnable {
     public void run() {
         try {
             server = new ServerSocket(1234);
-            System.out.println("Server now listening on port: " + server.getLocalPort());
+            System.out.println("Server started on port: " + server.getLocalPort());
 
             Thread UDPServer = new Thread(new UDPThread());
             UDPServer.start();

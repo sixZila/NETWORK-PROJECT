@@ -6,20 +6,22 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServerIOListener extends Thread {
 
-    private final HashMap<String, Socket> clientList;
+    private final HashMap<String, User> clientList;
     private final BufferedReader inReader;
     private final PrintWriter outWriter;
+    private User userInfo;
     private final Socket socket;
     private final InetAddress clientIP;
     private String username;
 
-    public ServerIOListener(HashMap<String, Socket> clientList, Socket socket) throws IOException {
+    public ServerIOListener(HashMap<String, User> clientList, Socket socket) throws IOException {
         //Initializations
         this.clientList = clientList;
         this.socket = socket;
@@ -37,6 +39,7 @@ public class ServerIOListener extends Thread {
     public void run() {
         //Login to the server.
         login();
+        userInfo = clientList.get(username);
 
         while (true) {
             try {
@@ -49,10 +52,35 @@ public class ServerIOListener extends Thread {
                 //Check the action of the user
                 switch (input[0]) {
                     case "POST":
-                        postMessage(input);
+                        if (input.length < 2) {
+                            outWriter.println("Error: there is no meesage to be sent.");
+                        } else {
+                            postMessage(input);
+                        }
                         break;
                     case "PM":
-                        personalMessage(input);
+                        if (input.length < 3) {
+                            outWriter.println("Error: there is no meesage to be sent.");
+                        } else {
+                            personalMessage(input);
+                        }
+                        break;
+                    case "FOLLOW":
+                        if (input.length != 2) {
+                            outWriter.println("Error: Invalid Username Format. Format: FOLLOW [username]");
+                        } else {
+                            followUser(input);
+                        }
+                        break;
+                    case "ACCEPT":
+                        if (input.length != 2) {
+                            outWriter.println("Error: Invalid Username Format. Format: FOLLOW [username]");
+                        } else {
+                            acceptUser(input);
+                        }
+                        break;
+                    default:
+                        outWriter.println("Error: Invalid Message Format.");
                         break;
                 }
 
@@ -63,6 +91,49 @@ public class ServerIOListener extends Thread {
                 break;
             }
         }
+    }
+
+    private void followUser(String[] input) {
+        User followee = clientList.get(input[1]);
+        Socket outSocket = followee.getClientSocket();
+
+        PrintWriter writer;
+
+        try {
+            //Open writer to the desired user to follow.
+            writer = new PrintWriter(outSocket.getOutputStream(), true);
+            followee.addRequest(username);
+
+            //Send a request to the user.
+            writer.println(username + " wants to follow you.");
+        } catch (IOException ex) {
+            Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void acceptUser(String[] input) {
+        User followee = clientList.get(input[1]);
+        Socket outSocket = followee.getClientSocket();
+
+        if (userInfo.removeRequest(input[1])) {
+            userInfo.addFollower(input[1]);
+
+            PrintWriter writer;
+
+            try {
+                //Open writer to the follower.
+                writer = new PrintWriter(outSocket.getOutputStream(), true);
+
+                //Send the message to follower.
+                writer.println(username + " accepted your follow request");
+                outWriter.println(input[1] + " is now following you.");
+            } catch (IOException ex) {
+                Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            outWriter.println("User: " + input[1] + " did not send a follow request or does not exist.");
+        }
+
     }
 
     //Builds the message from the String array.
@@ -85,14 +156,14 @@ public class ServerIOListener extends Thread {
         StringBuilder message = buildMessage(input, 1);
 
         //CHANGE THIS TO FOLLOWERS LATER:
-        for (String key : clientList.keySet()) {
+        for (String key : userInfo.getFollowers()) {
             //Get the socket of the followers.
-            Socket outSocket = clientList.get(key);
+            User client = clientList.get(key);
             PrintWriter writer;
 
             try {
                 //Open writer to the follower
-                writer = new PrintWriter(outSocket.getOutputStream(), true);
+                writer = new PrintWriter(client.getClientSocket().getOutputStream(), true);
 
                 //Send the message to follower.
                 writer.println(username + " posted from " + clientIP.getHostAddress() + ": \"" + message.toString() + "\"");
@@ -105,26 +176,30 @@ public class ServerIOListener extends Thread {
     }
 
     private void personalMessage(String[] input) {
-        Socket outSocket = clientList.get(input[1]);
-        //Check if username exists.
-        if (socket != null) {
-            try {
-                //Open writer to the reciever
-                PrintWriter writer = new PrintWriter(outSocket.getOutputStream(), true);
+        try {
+            Socket outSocket = clientList.get(input[1]).getClientSocket();
+            //Check if username exists.
+            if (socket != null) {
+                try {
+                    //Open writer to the reciever
+                    PrintWriter writer = new PrintWriter(outSocket.getOutputStream(), true);
 
-                //Build the message to be sent.
-                StringBuilder message = buildMessage(input, 2);
+                    //Build the message to be sent.
+                    StringBuilder message = buildMessage(input, 2);
 
-                //Send the message to the desired user.
-                writer.println(username + " sent a message from " + clientIP.getHostAddress() + ": \"" + message.toString() + "\"");
+                    //Send the message to the desired user.
+                    writer.println(username + " sent a message from " + clientIP.getHostAddress() + ": \"" + message.toString() + "\"");
 
-                //Log the action.
-                //System.out.println(username + " sent a message to " + input[0] + " containing: " + message.toString());
-            } catch (IOException ex) {
-                Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+                    //Log the action.
+                    //System.out.println(username + " sent a message to " + input[0] + " containing: " + message.toString());
+                } catch (IOException ex) {
+                    Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else {
+                //Else print a message saying that the username is not found in the list.
+                outWriter.println("Username: " + input[0] + " not found.");
             }
-        } else {
-            //Else print a message saying that the username is not found in the list.
+        } catch (Exception e) {
             outWriter.println("Username: " + input[0] + " not found.");
         }
     }
@@ -146,7 +221,7 @@ public class ServerIOListener extends Thread {
                     isUsernameExists = !(clientList.get(username) == null);
 
                     if (!isUsernameExists) {
-                        clientList.put(username, socket);
+                        clientList.put(username, new User(socket));
                         outWriter.println("Logged in as: " + username);
 
                         //Log Connection

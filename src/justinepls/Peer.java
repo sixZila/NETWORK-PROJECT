@@ -15,6 +15,7 @@ public final class Peer {
 
     private String address;
     private InetAddress IP;
+    private boolean isLoggedIn;
     private Socket socket;
     private Thread inThread, outThread;
 
@@ -96,5 +97,13 @@ public final class Peer {
             return false;
         }
         return false;
+    }
+
+    public boolean isIsLoggedIn() {
+        return isLoggedIn;
+    }
+
+    public void setIsLoggedIn(boolean isLoggedIn) {
+        this.isLoggedIn = isLoggedIn;
     }
 }

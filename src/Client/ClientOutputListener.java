@@ -7,7 +7,7 @@ import java.net.Socket;
 
 public class ClientOutputListener implements Runnable {
 
-    BufferedReader in;
+    private BufferedReader in;
 
     public ClientOutputListener(Socket socket) throws IOException {
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));

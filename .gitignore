@@ -11,3 +11,7 @@ build/classes/Server/UDPThread.class
 dist/README.TXT
 nbproject/private/private.properties
 nbproject/private/private.xml
+build/classes/Server/ServerThread.class
+build/classes/Server/User.class
+build/classes/Server/ServerThread.class
+build/classes/Server/ServerThread.class
