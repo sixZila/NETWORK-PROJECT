@@ -55,6 +55,7 @@ public class ServerIOListener extends Thread {
                         if (input.length < 2) {
                             outWriter.println("Error: there is no meesage to be sent.");
                         } else {
+                            outWriter.println("Your post is now sent to your followers.");
                             postMessage(input);
                         }
                         break;
@@ -62,6 +63,7 @@ public class ServerIOListener extends Thread {
                         if (input.length < 3) {
                             outWriter.println("Error: there is no meesage to be sent.");
                         } else {
+                            outWriter.println("Message sent to: " + input[1]);
                             personalMessage(input);
                         }
                         break;
@@ -69,6 +71,7 @@ public class ServerIOListener extends Thread {
                         if (input.length != 2) {
                             outWriter.println("Error: Invalid Username Format. Format: FOLLOW [username]");
                         } else {
+                            outWriter.println("Follow Request sent to: " + input[1]);
                             followUser(input);
                         }
                         break;
@@ -102,6 +105,8 @@ public class ServerIOListener extends Thread {
         try {
             //Open writer to the desired user to follow.
             writer = new PrintWriter(outSocket.getOutputStream(), true);
+
+            //Add request to the list
             followee.addRequest(username);
 
             //Send a request to the user.
@@ -115,7 +120,9 @@ public class ServerIOListener extends Thread {
         User followee = clientList.get(input[1]);
         Socket outSocket = followee.getClientSocket();
 
+        //Remove the followers name to the list of pending requests. It will return true if the user exists, it will return false if the username did not send a follow request or does not exist.
         if (userInfo.removeRequest(input[1])) {
+            //Add the Follower to the follower list.
             userInfo.addFollower(input[1]);
 
             PrintWriter writer;
@@ -130,6 +137,7 @@ public class ServerIOListener extends Thread {
             } catch (IOException ex) {
                 Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
             }
+            //Else, promt user of the error.
         } else {
             outWriter.println("User: " + input[1] + " did not send a follow request or does not exist.");
         }
