@@ -18,9 +18,9 @@ public class ServerIOListener extends Thread {
     private final Socket socket;
     private String username;
 
-    public ServerIOListener(Peer server, Socket socket) throws IOException {
+    public ServerIOListener(HashMap<String, Socket> clientList, Socket socket) throws IOException {
         //Initializations
-        this.clientList = server.getFollowers();
+        this.clientList = clientList;
         this.socket = socket;
         inReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         outWriter = new PrintWriter(socket.getOutputStream(), true);
@@ -87,7 +87,7 @@ public class ServerIOListener extends Thread {
             //Get the socket of the followers.
             Socket outSocket = clientList.get(key);
             PrintWriter writer;
-            
+
             try {
                 //Open writer to the follower
                 writer = new PrintWriter(outSocket.getOutputStream(), true);
@@ -130,7 +130,7 @@ public class ServerIOListener extends Thread {
     //Log in the client to the server.
     private void login() {
         boolean isUsernameExists;
-        
+
         try {
             if (inReader.readLine().equals("")) {
                 //Send welcome message.
