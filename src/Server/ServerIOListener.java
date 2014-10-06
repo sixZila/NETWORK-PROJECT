@@ -4,11 +4,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import justinepls.Peer;
 
 public class ServerIOListener extends Thread {
 
@@ -16,12 +16,14 @@ public class ServerIOListener extends Thread {
     private final BufferedReader inReader;
     private final PrintWriter outWriter;
     private final Socket socket;
+    private final InetAddress clientIP;
     private String username;
 
     public ServerIOListener(HashMap<String, Socket> clientList, Socket socket) throws IOException {
         //Initializations
         this.clientList = clientList;
         this.socket = socket;
+        clientIP = socket.getInetAddress();
         inReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         outWriter = new PrintWriter(socket.getOutputStream(), true);
 
@@ -56,7 +58,7 @@ public class ServerIOListener extends Thread {
 
             } catch (IOException ex) {
                 //If user disconnected
-                System.out.println(username + " disconnected.");
+                //System.out.println(username + " disconnected.");
                 clientList.remove(username);
                 break;
             }
@@ -93,13 +95,13 @@ public class ServerIOListener extends Thread {
                 writer = new PrintWriter(outSocket.getOutputStream(), true);
 
                 //Send the message to follower.
-                writer.println(username + " posted: \"" + message.toString() + "\"");
+                writer.println(username + " posted from " + clientIP.getHostAddress() + ": \"" + message.toString() + "\"");
             } catch (IOException ex) {
                 Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         //Log the action.
-        System.out.println(username + " posted: " + message.toString());
+        //System.out.println(username + " posted: " + message.toString());
     }
 
     private void personalMessage(String[] input) {
@@ -114,10 +116,10 @@ public class ServerIOListener extends Thread {
                 StringBuilder message = buildMessage(input, 2);
 
                 //Send the message to the desired user.
-                writer.println(username + " sent a message: \"" + message.toString() + "\"");
+                writer.println(username + " sent a message from " + clientIP.getHostAddress() + ": \"" + message.toString() + "\"");
 
                 //Log the action.
-                System.out.println(username + " sent a message to " + input[0] + " containing: " + message.toString());
+                //System.out.println(username + " sent a message to " + input[0] + " containing: " + message.toString());
             } catch (IOException ex) {
                 Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -148,7 +150,7 @@ public class ServerIOListener extends Thread {
                         outWriter.println("Logged in as: " + username);
 
                         //Log Connection
-                        System.out.println(username + " connected with IP address: " + socket.getInetAddress().getHostAddress());
+                        //System.out.println(username + " connected with IP address: " + socket.getInetAddress().getHostAddress());
                     } else {
                         //Send error to client saying that the username already exists.
                         outWriter.println("Username \"" + username + "\" already exists.");
