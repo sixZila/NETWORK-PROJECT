@@ -32,15 +32,15 @@ public final class Peer {
         startListening();
     }
 
-    public void startListening() throws IOException {
+    public void startListening() {
         Scanner s = new Scanner(System.in);
         boolean serverRunning;
         String input;
-        
+
         System.out.println("Your IP Address is: " + IP.getHostAddress());
         //Print empty space
         System.out.println();
-        
+
         System.out.println("Welcome! Type \"scan\" to automatically search for the server.");
         System.out.println("Type \"start\" to run as a server.");
 
@@ -55,7 +55,13 @@ public final class Peer {
                 case "start":
                     Thread server = new Thread(new ServerThread());
                     server.start();
-                    socket = new Socket(IP, 1234);
+
+                    try {
+                        socket = new Socket(IP, 1234);
+                    } catch (IOException ex) {
+
+                    }
+
                     serverRunning = true;
                     break;
                 default:
@@ -65,15 +71,22 @@ public final class Peer {
                     } catch (SocketException e) {
                         System.out.println("Unable to connect to server.");
                         serverRunning = false;
+                    } catch (IOException e) {
+                        System.out.println("Unable to connect to server.");
+                        serverRunning = false;
                     }
                     break;
             }
         } while (!serverRunning);
 
-        outThread = new Thread(new ClientInputListener(socket, address));
-        inThread = new Thread(new ClientOutputListener(socket));
-        outThread.start();
-        inThread.start();
+        try {
+            outThread = new Thread(new ClientInputListener(socket, address));
+            inThread = new Thread(new ClientOutputListener(socket));
+            outThread.start();
+            inThread.start();
+        } catch (IOException ex) {
+
+        }
     }
 
     //Scan the network for a server

@@ -36,7 +36,6 @@ public class ServerIOListener extends Thread {
     public void run() {
         //Login to the server.
         login();
-        userInfo = clientList.get(username);
 
         while (true) {
             try {
@@ -122,7 +121,7 @@ public class ServerIOListener extends Thread {
                         outWriter.println("You are already following this user.");
                     }
                 } catch (IOException ex) {
-                    Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+
                 }
             } else {
                 outWriter.println("The username you want to follow does not exist.");
@@ -249,7 +248,9 @@ public class ServerIOListener extends Thread {
                     isUsernameExists = !(clientList.get(username) == null);
 
                     if (!isUsernameExists) {
-                        clientList.put(username, new User(socket));
+                        userInfo = new User(socket);
+                        clientList.put(username, userInfo);
+                        clientList.put(socket.getInetAddress().getHostAddress(), userInfo);
                         outWriter.println("Logged in as: " + username);
 
                         //Log Connection
