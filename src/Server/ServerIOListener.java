@@ -29,7 +29,6 @@ public class ServerIOListener implements Runnable {
         outWriter = new PrintWriter(socket.getOutputStream(), true);
     }
 
-
     @Override
     public void run() {
         //Login to the server.
@@ -150,7 +149,7 @@ public class ServerIOListener implements Runnable {
                     writer.println(username + " accepted your follow request");
                     outWriter.println(input[1] + " is now following you.");
                 } catch (IOException ex) {
-                    
+
                 }
                 //Else, promt user of the error.
             } else {
@@ -232,7 +231,6 @@ public class ServerIOListener implements Runnable {
     //Log in the client to the server.
     public void login() {
         boolean isUsernameValid;
-
         try {
             //Send welcome message.
             outWriter.println("Welcome! Please enter your username: ");
@@ -252,7 +250,7 @@ public class ServerIOListener implements Runnable {
                         clientList.put(socket.getInetAddress().getHostAddress(), userInfo);
                         outWriter.println("Logged in as: " + username);
 
-                            //Log Connection
+                        //Log Connection
                         //System.out.println(username + " connected with IP address: " + socket.getInetAddress().getHostAddress());
                     } else {
                         //Send error to client saying that the username already exists.
