@@ -6,12 +6,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServerIOListener extends Thread {
+public class ServerIOListener implements Runnable {
 
     private final HashMap<String, User> clientList;
     private final BufferedReader inReader;
@@ -28,8 +27,6 @@ public class ServerIOListener extends Thread {
         clientIP = socket.getInetAddress();
         inReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         outWriter = new PrintWriter(socket.getOutputStream(), true);
-
-        start();
     }
 
     /*
@@ -77,7 +74,7 @@ public class ServerIOListener extends Thread {
                         break;
                     case "ACCEPT":
                         if (input.length != 2) {
-                            outWriter.println("Error: Invalid Username Format. Format: FOLLOW [username]");
+                            outWriter.println("Error: Invalid Username Format. Format: ACCEPT [username]");
                         } else {
                             acceptUser(input);
                         }
@@ -97,51 +94,74 @@ public class ServerIOListener extends Thread {
     }
 
     private void followUser(String[] input) {
-        User followee = clientList.get(input[1]);
-        Socket outSocket = followee.getClientSocket();
+        //Check if the username of the follow request is the same as the client.
+        if (input[1].equals(username)) {
+            User followee = clientList.get(input[1]);
+            Socket outSocket;
 
-        PrintWriter writer;
+            //Check if the user you want to follow exists.
+            if (followee != null) {
+                try {
+                    //Check if the user is already following the desired followee
+                    if (!followee.checkFollower(username)) {
+                        //Add request to the list
+                        if (followee.addRequest(username)) {
+                            outSocket = followee.getClientSocket();
+                            PrintWriter writer;
 
-        try {
-            //Open writer to the desired user to follow.
-            writer = new PrintWriter(outSocket.getOutputStream(), true);
-
-            //Add request to the list
-            followee.addRequest(username);
-
-            //Send a request to the user.
-            writer.println(username + " wants to follow you.");
-        } catch (IOException ex) {
-            Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+                            //Open writer to the desired user to follow.
+                            writer = new PrintWriter(outSocket.getOutputStream(), true);
+                            //Send a request to the user.
+                            writer.println(username + " wants to follow you.");
+                        } else {
+                            //Notify the user that a request is already sent.
+                            outWriter.println("You already sent a request to the user.");
+                        }
+                    } else {
+                        //Notify the user that he/she is already following the desired user.
+                        outWriter.println("You are already following this user.");
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else {
+                outWriter.println("The username you want to follow does not exist.");
+            }
+        } else {
+            System.out.println("You can not send a follow request to yourself.");
         }
     }
 
     private void acceptUser(String[] input) {
-        User followee = clientList.get(input[1]);
-        Socket outSocket = followee.getClientSocket();
+        //Check if the username is the same client
+        if (input[1].equals(username)) {
+            User followee = clientList.get(input[1]);
+            Socket outSocket = followee.getClientSocket();
 
-        //Remove the followers name to the list of pending requests. It will return true if the user exists, it will return false if the username did not send a follow request or does not exist.
-        if (userInfo.removeRequest(input[1])) {
-            //Add the Follower to the follower list.
-            userInfo.addFollower(input[1]);
+            //Remove the followers name to the list of pending requests. It will return true if the user exists, it will return false if the username did not send a follow request or does not exist.
+            if (userInfo.removeRequest(input[1])) {
+                //Add the Follower to the follower list.
+                userInfo.addFollower(input[1]);
 
-            PrintWriter writer;
+                PrintWriter writer;
 
-            try {
-                //Open writer to the follower.
-                writer = new PrintWriter(outSocket.getOutputStream(), true);
+                try {
+                    //Open writer to the follower.
+                    writer = new PrintWriter(outSocket.getOutputStream(), true);
 
-                //Send the message to follower.
-                writer.println(username + " accepted your follow request");
-                outWriter.println(input[1] + " is now following you.");
-            } catch (IOException ex) {
-                Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+                    //Send the message to follower.
+                    writer.println(username + " accepted your follow request");
+                    outWriter.println(input[1] + " is now following you.");
+                } catch (IOException ex) {
+                    Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                //Else, promt user of the error.
+            } else {
+                outWriter.println("User: " + input[1] + " did not send a follow request or does not exist.");
             }
-            //Else, promt user of the error.
-        } else {
-            outWriter.println("User: " + input[1] + " did not send a follow request or does not exist.");
+        } else { 
+            System.out.println("You cannot accept a follow request to yourself.");
         }
-
     }
 
     //Builds the message from the String array.

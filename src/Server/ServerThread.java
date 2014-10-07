@@ -1,22 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Server;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 
-/**
- *
- * @author MC
- */
 public class ServerThread implements Runnable {
 
     private ServerSocket server;
-    private HashMap<String, User> clientList;
+    private final HashMap<String, User> clientList;
 
     public ServerThread() {
         clientList = new HashMap<>();
@@ -33,9 +25,10 @@ public class ServerThread implements Runnable {
             //Accept clients.
             while (true) {
                 Socket client = server.accept();
-                ServerIOListener newClient = new ServerIOListener(clientList, client);
+                Thread newClient = new Thread(new ServerIOListener(clientList, client));
+                newClient.start();
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

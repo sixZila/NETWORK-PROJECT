@@ -27,9 +27,8 @@ public class UDPThread implements Runnable {
 
                 //Reicieve data from a client.
                 serverSocket.receive(inPacket);
-                String message = new String(inPacket.getData());
 
-                System.out.println("Client Connected with IP Address: " + inPacket.getAddress().getHostAddress());
+                //System.out.println("Client Connected with IP Address: " + inPacket.getAddress().getHostAddress());
 
                 //Send to client a successful connection and server IP information
                 DatagramPacket sendPacket = new DatagramPacket(outData, outData.length, inPacket.getAddress(), inPacket.getPort());

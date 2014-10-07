@@ -1,17 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Server;
 
 import java.net.Socket;
 import java.util.ArrayList;
 
-/**
- *
- * @author MC
- */
 public class User {
 
     private final ArrayList<String> followers;
@@ -39,6 +30,10 @@ public class User {
         } else {
             return false;
         }
+    }
+    
+    public boolean checkFollower(String username) {
+        return followers.contains(username);
     }
 
     public ArrayList<String> getFollowers() {
