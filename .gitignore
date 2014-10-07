@@ -16,3 +16,5 @@ build/classes/Server/User.class
 build/classes/Server/ServerThread.class
 build/classes/Server/ServerThread.class
 build/classes/Server/ServerThread.class
+build/classes/Client/ClientThread.class
+build/classes/Server/ServerThread.class

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 public class User {
 
+    //private final String IPAddress;
     private final ArrayList<String> followers;
     private final ArrayList<String> requests;
     private final Socket clientSocket;

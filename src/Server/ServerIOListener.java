@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServerIOListener implements Runnable {
+public class ServerIOListener extends Thread {
 
     private final HashMap<String, User> clientList;
     private final BufferedReader inReader;
@@ -27,6 +27,8 @@ public class ServerIOListener implements Runnable {
         clientIP = socket.getInetAddress();
         inReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         outWriter = new PrintWriter(socket.getOutputStream(), true);
+        
+        run();
     }
 
     /*
