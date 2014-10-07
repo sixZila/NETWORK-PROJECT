@@ -8,16 +8,15 @@ import java.util.Scanner;
 public class ClientInputListener implements Runnable {
 
     private final PrintWriter out;
+    Scanner inputScanner;
 
-    public ClientInputListener(Socket socket, String IP) throws IOException {
+    public ClientInputListener(Socket socket, Scanner inputScanner) throws IOException {
         out = new PrintWriter(socket.getOutputStream(), true);
-
-        //out.println("Username : " + IP + " with username: [USER] connected to the server.");
-        out.println("");
+        this.inputScanner = inputScanner;
     }
 
     public void run() {
-        Scanner inputScanner = new Scanner(System.in);
+
         String message;
 
         while (true) {

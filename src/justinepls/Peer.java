@@ -55,13 +55,11 @@ public final class Peer {
                 case "start":
                     Thread server = new Thread(new ServerThread());
                     server.start();
-
                     try {
                         socket = new Socket(IP, 1234);
                     } catch (IOException ex) {
 
                     }
-
                     serverRunning = true;
                     break;
                 default:
@@ -80,10 +78,11 @@ public final class Peer {
         } while (!serverRunning);
 
         try {
-            outThread = new Thread(new ClientInputListener(socket, address));
+            outThread = new Thread(new ClientInputListener(socket, s));
             inThread = new Thread(new ClientOutputListener(socket));
-            outThread.start();
             inThread.start();
+            outThread.start();
+
         } catch (IOException ex) {
 
         }

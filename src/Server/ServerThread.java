@@ -22,11 +22,11 @@ public class ServerThread implements Runnable {
 
             Thread UDPServer = new Thread(new UDPThread());
             UDPServer.start();
-            
+
             //Accept clients.
             while (true) {
                 Socket client = server.accept();
-                ServerIOListener newClient = new ServerIOListener(clientList, client);
+                Thread newClient = new Thread(new ServerIOListener(clientList, client));
                 newClient.start();
             }
         } catch (IOException e) {

@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServerIOListener extends Thread {
+public class ServerIOListener implements Runnable {
 
     private final HashMap<String, User> clientList;
     private final BufferedReader inReader;
@@ -29,9 +29,7 @@ public class ServerIOListener extends Thread {
         outWriter = new PrintWriter(socket.getOutputStream(), true);
     }
 
-    /*
-     Run the thread
-     */
+
     @Override
     public void run() {
         //Login to the server.
@@ -152,7 +150,7 @@ public class ServerIOListener extends Thread {
                     writer.println(username + " accepted your follow request");
                     outWriter.println(input[1] + " is now following you.");
                 } catch (IOException ex) {
-                    Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
+                    
                 }
                 //Else, promt user of the error.
             } else {
@@ -232,35 +230,43 @@ public class ServerIOListener extends Thread {
     }
 
     //Log in the client to the server.
-    private void login() {
-        boolean isUsernameExists;
+    public void login() {
+        boolean isUsernameValid;
 
         try {
-            if (inReader.readLine().equals("")) {
-                //Send welcome message.
-                outWriter.println("Welcome! Please enter your username.");
+            //Send welcome message.
+            outWriter.println("Welcome! Please enter your username: ");
 
-                //Loop until user inputs a unique username.
-                do {
-                    username = inReader.readLine();
+            //Loop until user inputs a unique username.
+            do {
+                username = inReader.readLine();
+
+                if (username.split("\\s").length == 1) {
 
                     //Check if the username exists in the list.
-                    isUsernameExists = !(clientList.get(username) == null);
+                    isUsernameValid = !(clientList.get(username) == null);
 
-                    if (!isUsernameExists) {
+                    if (!isUsernameValid) {
                         userInfo = new User(socket);
                         clientList.put(username, userInfo);
                         clientList.put(socket.getInetAddress().getHostAddress(), userInfo);
                         outWriter.println("Logged in as: " + username);
 
-                        //Log Connection
+                            //Log Connection
                         //System.out.println(username + " connected with IP address: " + socket.getInetAddress().getHostAddress());
                     } else {
                         //Send error to client saying that the username already exists.
                         outWriter.println("Username \"" + username + "\" already exists.");
+                        outWriter.println("Please input your username: ");
                     }
-                } while (isUsernameExists);
-            }
+                } else {
+                    isUsernameValid = false;
+
+                    //Send error to client saying that the username can't have spaces.
+                    outWriter.println("Your username can not have spaces.");
+                    outWriter.println("Please input your username: ");
+                }
+            } while (isUsernameValid);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
