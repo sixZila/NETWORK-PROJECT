@@ -11,6 +11,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class Peer {
 
@@ -53,14 +55,20 @@ public final class Peer {
                     serverRunning = scanNetwork();
                     break;
                 case "start":
-                    Thread server = new Thread(new ServerThread());
-                    server.start();
                     try {
-                        socket = new Socket(IP, 1234);
+                        Socket temp = new Socket("127.0.0.1" ,1234);
+                        System.out.println("There's a server already running.");
+                        serverRunning = false;
                     } catch (IOException ex) {
-
+                        Thread server = new Thread(new ServerThread());
+                        server.start();
+                        serverRunning = true;
+                        try {
+                            socket = new Socket(IP, 1234);
+                        } catch (IOException ex1) {
+                            Logger.getLogger(Peer.class.getName()).log(Level.SEVERE, null, ex1);
+                        }
                     }
-                    serverRunning = true;
                     break;
                 default:
                     try {
