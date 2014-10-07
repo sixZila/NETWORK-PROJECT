@@ -23,3 +23,11 @@ build/classes/Server/ServerThread.class
 build/classes/Server/ServerThread.class
 nbproject/project.properties
 nbproject/genfiles.properties
+/build/
+/dist/
+nbproject/genfiles.properties
+*.properties
+*.class
+*.properties
+*.properties
+build/classes/Server/ServerThread.class
