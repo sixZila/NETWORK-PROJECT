@@ -36,16 +36,23 @@ public final class Peer {
         Scanner s = new Scanner(System.in);
         boolean serverRunning;
         String input;
+        
+        System.out.println("Your IP Address is: " + IP.getHostAddress());
+        //Print empty space
+        System.out.println();
+        
+        System.out.println("Welcome! Type \"scan\" to automatically search for the server.");
+        System.out.println("Type \"start\" to run as a server.");
 
         do {
             System.out.print("Input the IP Address of the server: ");
             input = s.nextLine();
 
             switch (input) {
-                case "Scan":
+                case "scan":
                     serverRunning = scanNetwork();
                     break;
-                case "Start":
+                case "start":
                     Thread server = new Thread(new ServerThread());
                     server.start();
                     socket = new Socket(IP, 1234);
@@ -62,9 +69,6 @@ public final class Peer {
                     break;
             }
         } while (!serverRunning);
-        //If server does not exists, use the current program as a server.
-        //Else use program as a client.
-        System.out.println("Your IP Address is: " + IP.getHostAddress());
 
         outThread = new Thread(new ClientInputListener(socket, address));
         inThread = new Thread(new ClientOutputListener(socket));

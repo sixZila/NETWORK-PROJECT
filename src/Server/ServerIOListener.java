@@ -183,7 +183,7 @@ public class ServerIOListener extends Thread {
         //Build the message to be sent.
         StringBuilder message = buildMessage(input, 1);
 
-        //CHANGE THIS TO FOLLOWERS LATER:
+        //Traverse the followers.
         for (String key : userInfo.getFollowers()) {
             //Get the socket of the followers.
             User client = clientList.get(key);
