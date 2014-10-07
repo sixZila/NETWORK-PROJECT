@@ -27,8 +27,6 @@ public class ServerIOListener extends Thread {
         clientIP = socket.getInetAddress();
         inReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         outWriter = new PrintWriter(socket.getOutputStream(), true);
-        
-        run();
     }
 
     /*
@@ -161,7 +159,7 @@ public class ServerIOListener extends Thread {
             } else {
                 outWriter.println("User: " + input[1] + " did not send a follow request or does not exist.");
             }
-        } else { 
+        } else {
             System.out.println("You cannot accept a follow request to yourself.");
         }
     }

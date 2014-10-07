@@ -27,6 +27,7 @@ public class ServerThread implements Runnable {
             while (true) {
                 Socket client = server.accept();
                 ServerIOListener newClient = new ServerIOListener(clientList, client);
+                newClient.start();
             }
         } catch (IOException e) {
             e.printStackTrace();

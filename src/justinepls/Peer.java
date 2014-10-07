@@ -10,12 +10,12 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 public final class Peer {
 
     private String address;
     private InetAddress IP;
-    private boolean isLoggedIn;
     private Socket socket;
     private Thread inThread, outThread;
 
@@ -30,20 +30,39 @@ public final class Peer {
         }
 
         startListening();
-        //initialized by providing a port to listen for incoming connections
-        //main loop
-        /* listen for incoming connections
-         separate threads to handle them
-         dispatch incoming requests to application handler based on message type*/
     }
 
     public void startListening() throws IOException {
+        Scanner s = new Scanner(System.in);
+        boolean serverRunning;
+        String input;
+
+        do {
+            System.out.print("Input the IP Address of the server: ");
+            input = s.nextLine();
+
+            switch (input) {
+                case "Scan":
+                    serverRunning = scanNetwork();
+                    break;
+                case "Start":
+                    Thread server = new Thread(new ServerThread());
+                    server.start();
+                    socket = new Socket(IP, 1234);
+                    serverRunning = true;
+                    break;
+                default:
+                    try {
+                        socket = new Socket(input, 1234);
+                        serverRunning = true;
+                    } catch (SocketException e) {
+                        System.out.println("Unable to connect to server.");
+                        serverRunning = false;
+                    }
+                    break;
+            }
+        } while (!serverRunning);
         //If server does not exists, use the current program as a server.
-        if (!checkServerExists()) {
-            Thread server = new Thread(new ServerThread());
-            server.start();
-            socket = new Socket(IP, 1234);
-        }// end of if
         //Else use program as a client.
         System.out.println("Your IP Address is: " + IP.getHostAddress());
 
@@ -51,15 +70,10 @@ public final class Peer {
         inThread = new Thread(new ClientOutputListener(socket));
         outThread.start();
         inThread.start();
-    }// end of startListening();
+    }
 
-    //method for deciding on how to route messages
-    /*when peer module receives an incoming connection request, set up peer connection obj
-     read in the message type
-     launch separate thread to handle
-     close peer connection when message handler complete*/
-    //Check if there is already a server running in the network.
-    public boolean checkServerExists() {
+    //Scan the network for a server
+    public boolean scanNetwork() {
         byte[] outData = new byte[1024];
         byte[] inData = new byte[1024];
 
@@ -93,17 +107,9 @@ public final class Peer {
         } catch (SocketException ex) {
             System.out.println("Error");
         } catch (IOException ex) {
-            System.out.println("No Server Exists, Running server Instance.");
+            System.out.println("Theres no server running.");
             return false;
         }
         return false;
-    }
-
-    public boolean isIsLoggedIn() {
-        return isLoggedIn;
-    }
-
-    public void setIsLoggedIn(boolean isLoggedIn) {
-        this.isLoggedIn = isLoggedIn;
     }
 }
