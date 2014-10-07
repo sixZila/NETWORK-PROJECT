@@ -44,7 +44,7 @@ public class ServerIOListener implements Runnable {
 
                 //Check the action of the user
                 switch (input[0]) {
-                    case "POST":
+                    case "\"POST\"":
                         if (input.length < 2) {
                             outWriter.println("Error: there is no meesage to be sent.");
                         } else {
@@ -52,7 +52,7 @@ public class ServerIOListener implements Runnable {
                             postMessage(input);
                         }
                         break;
-                    case "PM":
+                    case "\"PM\"":
                         if (input.length < 3) {
                             outWriter.println("Error: there is no meesage to be sent.");
                         } else {
@@ -60,7 +60,7 @@ public class ServerIOListener implements Runnable {
                             personalMessage(input);
                         }
                         break;
-                    case "FOLLOW":
+                    case "\"FOLLOW\"":
                         if (input.length != 2) {
                             outWriter.println("Error: Invalid Username Format. Format: FOLLOW [username]");
                         } else {
@@ -68,7 +68,7 @@ public class ServerIOListener implements Runnable {
                             followUser(input);
                         }
                         break;
-                    case "ACCEPT":
+                    case "\"ACCEPT\"":
                         if (input.length != 2) {
                             outWriter.println("Error: Invalid Username Format. Format: ACCEPT [username]");
                         } else {
@@ -91,7 +91,7 @@ public class ServerIOListener implements Runnable {
 
     private void followUser(String[] input) {
         //Check if the username of the follow request is the same as the client.
-        if (input[1].equals(username)) {
+        if (!input[1].equals(username)) {
             User followee = clientList.get(input[1]);
             Socket outSocket;
 
@@ -130,7 +130,7 @@ public class ServerIOListener implements Runnable {
 
     private void acceptUser(String[] input) {
         //Check if the username is the same client
-        if (input[1].equals(username)) {
+        if (!input[1].equals(username)) {
             User followee = clientList.get(input[1]);
             Socket outSocket = followee.getClientSocket();
 
