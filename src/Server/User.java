@@ -3,15 +3,19 @@ package Server;
 import java.net.Socket;
 import java.util.ArrayList;
 
+//This class contains the user information of the clients.
 public class User {
 
-    //private final String IPAddress;
+    private final String IPAddress;
+    private final String username;
     private final ArrayList<String> followers;
     private final ArrayList<String> requests;
     private final Socket clientSocket;
 
-    public User(Socket clientSocket) {
+    public User(Socket clientSocket, String username) {
         this.clientSocket = clientSocket;
+        this.username = username;
+        IPAddress = clientSocket.getInetAddress().getHostAddress();
         followers = new ArrayList<>();
         requests = new ArrayList<>();
     }
@@ -32,7 +36,7 @@ public class User {
             return false;
         }
     }
-    
+
     public boolean checkFollower(String username) {
         return followers.contains(username);
     }
@@ -61,5 +65,9 @@ public class User {
 
     public ArrayList<String> getRequests() {
         return requests;
+    }
+
+    public boolean equals(String input) {
+        return (IPAddress.equals(input) || username.equals(input));
     }
 }

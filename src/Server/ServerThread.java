@@ -3,15 +3,15 @@ package Server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 public class ServerThread implements Runnable {
 
     private ServerSocket server;
-    private final HashMap<String, User> clientList;
+    private final ArrayList<User> clientList;
 
     public ServerThread() {
-        clientList = new HashMap<>();
+        clientList = new ArrayList<>();
     }
 
     @Override
@@ -30,7 +30,7 @@ public class ServerThread implements Runnable {
                 newClient.start();
             }
         } catch (IOException ex) {
-            
+
         }
 
     }

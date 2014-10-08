@@ -6,13 +6,14 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServerIOListener implements Runnable {
 
-    private final HashMap<String, User> clientList;
+    private final ArrayList<User> clientList;
     private final BufferedReader inReader;
     private final PrintWriter outWriter;
     private User userInfo;
@@ -20,7 +21,7 @@ public class ServerIOListener implements Runnable {
     private final InetAddress clientIP;
     private String username;
 
-    public ServerIOListener(HashMap<String, User> clientList, Socket socket) throws IOException {
+    public ServerIOListener(ArrayList<User> clientList, Socket socket) throws IOException {
         //Initializations
         this.clientList = clientList;
         this.socket = socket;
@@ -48,7 +49,6 @@ public class ServerIOListener implements Runnable {
                         if (input.length < 2) {
                             outWriter.println("Error: there is no meesage to be sent.");
                         } else {
-                            outWriter.println("Your post is now sent to your followers.");
                             postMessage(input);
                         }
                         break;
@@ -56,7 +56,6 @@ public class ServerIOListener implements Runnable {
                         if (input.length < 3) {
                             outWriter.println("Error: there is no meesage to be sent.");
                         } else {
-                            outWriter.println("Message sent to: " + input[1]);
                             personalMessage(input);
                         }
                         break;
@@ -64,7 +63,6 @@ public class ServerIOListener implements Runnable {
                         if (input.length != 2) {
                             outWriter.println("Error: Invalid Username Format. Format: FOLLOW [username]");
                         } else {
-                            outWriter.println("Follow Request sent to: " + input[1]);
                             followUser(input);
                         }
                         break;
@@ -81,18 +79,27 @@ public class ServerIOListener implements Runnable {
                 }
 
             } catch (IOException ex) {
-                //If user disconnected
-                //System.out.println(username + " disconnected.");
-                clientList.remove(username);
+                for (Iterator<User> it = clientList.iterator(); it.hasNext();) {
+                    User peer = it.next();
+                    if (peer.equals(username)) {
+                        it.remove();
+                    }
+                }
                 break;
             }
         }
     }
 
     private void followUser(String[] input) {
+        User followee = null;
         //Check if the username of the follow request is the same as the client.
         if (!input[1].equals(username)) {
-            User followee = clientList.get(input[1]);
+
+            for (User peer : clientList) {
+                if (peer.equals(input[1])) {
+                    followee = peer;
+                }
+            }
             Socket outSocket;
 
             //Check if the user you want to follow exists.
@@ -107,6 +114,10 @@ public class ServerIOListener implements Runnable {
 
                             //Open writer to the desired user to follow.
                             writer = new PrintWriter(outSocket.getOutputStream(), true);
+                            
+                            //Send a success message to the sender.
+                            outWriter.println("Follow Request sent to: " + input[1]);
+                            
                             //Send a request to the user.
                             writer.println(username + " wants to follow you.");
                         } else {
@@ -131,32 +142,47 @@ public class ServerIOListener implements Runnable {
     private void acceptUser(String[] input) {
         //Check if the username is the same client
         if (!input[1].equals(username)) {
-            User followee = clientList.get(input[1]);
-            Socket outSocket = followee.getClientSocket();
 
-            //Remove the followers name to the list of pending requests. It will return true if the user exists, it will return false if the username did not send a follow request or does not exist.
-            if (userInfo.removeRequest(input[1])) {
-                //Add the Follower to the follower list.
-                userInfo.addFollower(input[1]);
+            User followee = null;
 
-                PrintWriter writer;
-
-                try {
-                    //Open writer to the follower.
-                    writer = new PrintWriter(outSocket.getOutputStream(), true);
-
-                    //Send the message to follower.
-                    writer.println(username + " accepted your follow request");
-                    outWriter.println(input[1] + " is now following you.");
-                } catch (IOException ex) {
-
+            for (User peer : clientList) {
+                if (peer.equals(input[1])) {
+                    followee = peer;
+                    break;
                 }
-                //Else, promt user of the error.
+            }
+
+            if (followee != null) {
+                Socket outSocket = followee.getClientSocket();
+
+                //Remove the followers name to the list of pending requests. It will return true if the user exists, it will return false if the username did not send a follow request or does not exist.
+                if (userInfo.removeRequest(input[1])) {
+                    //Add the Follower to the follower list.
+                    userInfo.addFollower(input[1]);
+
+                    PrintWriter writer;
+
+                    try {
+                        //Open writer to the follower.
+                        writer = new PrintWriter(outSocket.getOutputStream(), true);
+
+                        //Send the message to follower.
+                        writer.println(username + " accepted your follow request");
+                        
+                        //Notify that the the user is now a follower.
+                        outWriter.println(input[1] + " is now following you.");
+                    } catch (IOException ex) {
+
+                    }
+                    //Else, promt user of the error.
+                } else {
+                    outWriter.println("User: " + input[1] + " did not send a follow request.");
+                }
             } else {
-                outWriter.println("User: " + input[1] + " did not send a follow request or does not exist.");
+                outWriter.println("User does not exist.");
             }
         } else {
-            System.out.println("You cannot accept a follow request to yourself.");
+            outWriter.println("You cannot accept a follow request to yourself.");
         }
     }
 
@@ -181,16 +207,30 @@ public class ServerIOListener implements Runnable {
 
         //Traverse the followers.
         for (String key : userInfo.getFollowers()) {
-            //Get the socket of the followers.
-            User client = clientList.get(key);
+
+            User follower = null;
+
+            //Search for follower
+            for (User peer : clientList) {
+                if (peer.equals(key)) {
+                    follower = peer;
+                    break;
+                }
+            }
+
+            Socket followerSocket = follower.getClientSocket();
+
             PrintWriter writer;
 
             try {
                 //Open writer to the follower
-                writer = new PrintWriter(client.getClientSocket().getOutputStream(), true);
+                writer = new PrintWriter(followerSocket.getOutputStream(), true);
 
                 //Send the message to follower.
                 writer.println(username + " posted from " + clientIP.getHostAddress() + ": \"" + message.toString() + "\"");
+                
+                //Notify the user that the message has to the followers.
+                outWriter.println("Your post is now sent to your followers.");
             } catch (IOException ex) {
                 Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -201,7 +241,16 @@ public class ServerIOListener implements Runnable {
 
     private void personalMessage(String[] input) {
         try {
-            Socket outSocket = clientList.get(input[1]).getClientSocket();
+            User follower = null;
+
+            //Search for follower
+            for (User peer : clientList) {
+                if (peer.equals(input[1])) {
+                    follower = peer;
+                    break;
+                }
+            }
+            Socket outSocket = follower.getClientSocket();
             //Check if username exists.
             if (socket != null) {
                 try {
@@ -214,8 +263,8 @@ public class ServerIOListener implements Runnable {
                     //Send the message to the desired user.
                     writer.println(username + " sent a message from " + clientIP.getHostAddress() + ": \"" + message.toString() + "\"");
 
-                    //Log the action.
-                    //System.out.println(username + " sent a message to " + input[0] + " containing: " + message.toString());
+                    //Notify the user that the message has been sent.
+                    outWriter.println("Message sent to: " + input[1]);
                 } catch (IOException ex) {
                     Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -238,16 +287,21 @@ public class ServerIOListener implements Runnable {
             //Loop until user inputs a unique username.
             do {
                 username = inReader.readLine();
+                isUsernameValid = false;
 
                 if (username.split("\\s").length == 1) {
 
                     //Check if the username exists in the list.
-                    isUsernameValid = !(clientList.get(username) == null);
+                    for (User peer : clientList) {
+                        if (peer.equals(username)) {
+                            isUsernameValid = true;
+                            break;
+                        }
+                    }
 
                     if (!isUsernameValid) {
-                        userInfo = new User(socket);
-                        clientList.put(username, userInfo);
-                        clientList.put(socket.getInetAddress().getHostAddress(), userInfo);
+                        userInfo = new User(socket, username);
+                        clientList.add(userInfo);
                         outWriter.println("Logged in as: " + username);
 
                         //Log Connection
