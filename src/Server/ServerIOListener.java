@@ -1,11 +1,15 @@
 package Server;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -20,6 +24,7 @@ public class ServerIOListener implements Runnable {
     private final Socket socket;
     private final InetAddress clientIP;
     private String username;
+    private final InputStream inputStream;
 
     public ServerIOListener(ArrayList<User> clientList, Socket socket) throws IOException {
         //Initializations
@@ -28,6 +33,7 @@ public class ServerIOListener implements Runnable {
         clientIP = socket.getInetAddress();
         inReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         outWriter = new PrintWriter(socket.getOutputStream(), true);
+        inputStream = socket.getInputStream();
     }
 
     @Override
@@ -73,6 +79,13 @@ public class ServerIOListener implements Runnable {
                             acceptUser(input);
                         }
                         break;
+                    case "\"FILE\"":
+                        if (input.length < 1) {
+                            outWriter.println("Error: Invalid Format. Format: \"FILE\" [FILENAME]");
+                        } else {
+                            sendFile(input);
+                        }
+                        break;
                     default:
                         outWriter.println("Error: Invalid Message Format.");
                         break;
@@ -114,10 +127,10 @@ public class ServerIOListener implements Runnable {
 
                             //Open writer to the desired user to follow.
                             writer = new PrintWriter(outSocket.getOutputStream(), true);
-                            
+
                             //Send a success message to the sender.
                             outWriter.println("Follow Request sent to: " + input[1]);
-                            
+
                             //Send a request to the user.
                             writer.println(username + " wants to follow you.");
                         } else {
@@ -139,6 +152,7 @@ public class ServerIOListener implements Runnable {
         }
     }
 
+    //Accept Follower Request
     private void acceptUser(String[] input) {
         //Check if the username is the same client
         if (!input[1].equals(username)) {
@@ -168,7 +182,7 @@ public class ServerIOListener implements Runnable {
 
                         //Send the message to follower.
                         writer.println(username + " accepted your follow request");
-                        
+
                         //Notify that the the user is now a follower.
                         outWriter.println(input[1] + " is now following you.");
                     } catch (IOException ex) {
@@ -186,20 +200,65 @@ public class ServerIOListener implements Runnable {
         }
     }
 
-    //Builds the message from the String array.
-    private StringBuilder buildMessage(String[] input, int start) {
-        StringBuilder message = new StringBuilder();
+    //Send a file to your peers
+    private void sendFile(String[] input) {
+        String directory = buildMessage(input, 1).toString();
+        String fileName = getFileName(directory);
 
-        for (int i = start; i < input.length; i++) {
-            message.append(input[i]);
-            if (i < input.length - 1) {
-                message.append(" ");
+        try {
+            //Read the file and store it
+            byte[] outFile = new byte[socket.getReceiveBufferSize()];
+            int bytesRead = inputStream.read(outFile, 0, outFile.length);
+
+            /////
+            //Open writer to the follower
+            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+            OutputStream fileSender = socket.getOutputStream();
+
+            //Send the message to follower.
+            writer.println(username + " posted a file from " + clientIP.getHostAddress() + " saved at C:/NETWORK/" + fileName);
+
+            //Send the file to the follower
+            fileSender.write(outFile, 0, outFile.length);
+            fileSender.flush();
+
+            /////
+            //Traverse the followers.
+            for (String key : userInfo.getFollowers()) {
+
+                User follower = null;
+
+                //Search for follower
+                for (User peer : clientList) {
+                    if (peer.equals(key)) {
+                        follower = peer;
+                        break;
+                    }
+                }
+
+                Socket followerSocket = follower.getClientSocket();
+
+                //Open writer to the follower
+                //PrintWriter writer = new PrintWriter(followerSocket.getOutputStream(), true);
+                //OutputStream fileSender = followerSocket.getOutputStream();
+                //Send the message to follower.
+                writer.println(username + " posted a file from " + clientIP.getHostAddress() + " saved at C:/NETWORK/" + getFileName(fileName));
+
+                //Send the file to the follower
+                fileSender.write(outFile, 0, outFile.length);
+                fileSender.flush();
             }
+            //Notify the user that the message has to the followers.s
+            outWriter.println("Your file is now sent to your followers.");
+        } catch (SocketException | FileNotFoundException ex) {
+
+        } catch (IOException ex) {
+            Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return message;
     }
 
+    //Post a message to your followers
     private void postMessage(String[] input) {
 
         //Build the message to be sent.
@@ -220,25 +279,25 @@ public class ServerIOListener implements Runnable {
 
             Socket followerSocket = follower.getClientSocket();
 
-            PrintWriter writer;
-
             try {
                 //Open writer to the follower
-                writer = new PrintWriter(followerSocket.getOutputStream(), true);
+                PrintWriter writer = new PrintWriter(followerSocket.getOutputStream(), true);
 
                 //Send the message to follower.
                 writer.println(username + " posted from " + clientIP.getHostAddress() + ": \"" + message.toString() + "\"");
-                
-                //Notify the user that the message has to the followers.
-                outWriter.println("Your post is now sent to your followers.");
             } catch (IOException ex) {
                 Logger.getLogger(ServerIOListener.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+
+        //Notify the user that the message has to the followers.
+        outWriter.println("Your post is now sent to your followers.");
+
         //Log the action.
         //System.out.println(username + " posted: " + message.toString());
     }
 
+    //Send a personal message to a user.
     private void personalMessage(String[] input) {
         try {
             User follower = null;
@@ -250,7 +309,9 @@ public class ServerIOListener implements Runnable {
                     break;
                 }
             }
+
             Socket outSocket = follower.getClientSocket();
+
             //Check if username exists.
             if (socket != null) {
                 try {
@@ -289,12 +350,11 @@ public class ServerIOListener implements Runnable {
                 username = inReader.readLine();
                 isUsernameValid = false;
 
-                if (username.split("\\s").length == 1) {
-
+                if (username.split("[\\s]").length == 1) {
                     //Check if the username exists in the list.
                     for (User peer : clientList) {
                         if (peer.equals(username)) {
-                            isUsernameValid = true;
+                            isUsernameValid = false;
                             break;
                         }
                     }
@@ -303,7 +363,7 @@ public class ServerIOListener implements Runnable {
                         userInfo = new User(socket, username);
                         clientList.add(userInfo);
                         outWriter.println("Logged in as: " + username);
-
+                        isUsernameValid = true;
                         //Log Connection
                         //System.out.println(username + " connected with IP address: " + socket.getInetAddress().getHostAddress());
                     } else {
@@ -318,9 +378,46 @@ public class ServerIOListener implements Runnable {
                     outWriter.println("Your username can not have spaces.");
                     outWriter.println("Please input your username: ");
                 }
-            } while (isUsernameValid);
+            } while (!isUsernameValid);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    //Get the file name from the a directory.
+    private String getFileName(String input) {
+        boolean fileNameBuilt = false;
+        StringBuilder name = new StringBuilder();
+        int index = input.length() - 1;
+
+        while (!fileNameBuilt) {
+            if (index != -1) {
+                if (!(input.charAt(index) == '/' || input.charAt(index) == '\\')) {
+                    name.append(input.charAt(index));
+                    index--;
+                } else {
+                    fileNameBuilt = true;
+                }
+            } else {
+                fileNameBuilt = true;
+            }
+        }
+
+        name = name.reverse();
+        return name.toString();
+    }
+
+    //Builds the message from the String array.
+    private StringBuilder buildMessage(String[] input, int start) {
+        StringBuilder message = new StringBuilder();
+
+        for (int i = start; i < input.length; i++) {
+            message.append(input[i]);
+            if (i < input.length - 1) {
+                message.append(" ");
+            }
+        }
+
+        return message;
     }
 }
