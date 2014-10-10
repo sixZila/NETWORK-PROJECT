@@ -1,24 +1,20 @@
 package Client;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.Socket;
 
 public class ClientOutputListener implements Runnable {
 
-    private final BufferedReader in;
-    private final InputStream serverInput;
+    private final DataInputStream in;
+    private final InputStream inputStream;
     private final Socket socket;
 
     public ClientOutputListener(Socket socket) throws IOException {
-        serverInput = socket.getInputStream();
         this.socket = socket;
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        inputStream = socket.getInputStream();
+        in = new DataInputStream(inputStream);
     }
 
     @Override
@@ -26,32 +22,34 @@ public class ClientOutputListener implements Runnable {
         String temp;
         try {
             while (true) {
-                temp = in.readLine();
+                temp = in.readUTF();
                 System.out.println(temp);
 
-                if (temp.contains("posted a file from") && temp.contains("C:/NETWORK/")) {
-                    byte[] inFile = new byte[socket.getReceiveBufferSize()];
-                    //Read the byte size
-                    int bytesRead = serverInput.read(inFile, 0, inFile.length);
-                    System.out.println(bytesRead);
-                    //Initialize File Name
-                    String fileName = getFileName(temp);
+                /*
+                 if (temp.contains("posted a file from") && temp.contains("C:/NETWORK/")) {
+                 byte[] inFile = new byte[socket.getReceiveBufferSize()];
+                 //Read the byte size
+                 int bytesRead = serverInput.read(inFile, 0, inFile.length);
+                 System.out.println(bytesRead);
+                 //Initialize File Name
+                 String fileName = getFileName(temp);
 
-                    //Make the directory
-                    File file = new File("C:/NETWORK/");
-                    file.mkdir();
-                    
-                    //Make the file
-                    file = new File("C:/NETWORK/" + fileName);
-                    file.createNewFile();
+                 //Make the directory
+                 File file = new File("C:/NETWORK/");
+                 file.mkdir();
 
-                    FileOutputStream fileOutput = new FileOutputStream("C:/NETWORK/" + fileName);
-                    BufferedOutputStream fileWriter = new BufferedOutputStream(fileOutput);
+                 //Make the file
+                 file = new File("C:/NETWORK/" + fileName);
+                 file.createNewFile();
 
-                    //Write the file
-                    fileWriter.write(inFile, 0, bytesRead);
-                    fileWriter.close();
-                }
+                 FileOutputStream fileOutput = new FileOutputStream("C:/NETWORK/" + fileName);
+                 BufferedOutputStream fileWriter = new BufferedOutputStream(fileOutput);
+
+                 //Write the file
+                 fileWriter.write(inFile, 0, bytesRead);
+                 fileWriter.close();
+                 }
+                 */
             }
         } catch (IOException ex) {
 

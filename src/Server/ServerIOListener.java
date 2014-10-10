@@ -348,34 +348,44 @@ public class ServerIOListener implements Runnable {
             //Loop until user inputs a unique username.
             do {
                 username = inReader.readLine();
-                isUsernameValid = false;
-
-                if (username.split("[\\s]").length == 1) {
-                    //Check if the username exists in the list.
-                    for (User peer : clientList) {
-                        if (peer.equals(username)) {
-                            isUsernameValid = false;
-                            break;
+                isUsernameValid = true;
+                
+                //Check if the usename is blank.
+                if (!(username.isEmpty() || username.equals(""))) {
+                    //Check if the username contains any spaces.
+                    if (username.split("[\\s]").length == 1) {
+                        //Check if the username exists in the list.
+                        for (User peer : clientList) {
+                            if (peer.equals(username)) {
+                                isUsernameValid = false;
+                                break;
+                            }
                         }
-                    }
 
-                    if (!isUsernameValid) {
-                        userInfo = new User(socket, username);
-                        clientList.add(userInfo);
-                        outWriter.println("Logged in as: " + username);
-                        isUsernameValid = true;
-                        //Log Connection
-                        //System.out.println(username + " connected with IP address: " + socket.getInetAddress().getHostAddress());
+                        if (isUsernameValid) {
+                            userInfo = new User(socket, username);
+                            clientList.add(userInfo);
+                            outWriter.println("Logged in as: " + username);
+                            isUsernameValid = true;
+                            //Log Connection
+                            //System.out.println(username + " connected with IP address: " + socket.getInetAddress().getHostAddress());
+                        } else {
+                            //Send error to client saying that the username already exists.
+                            outWriter.println("Username \"" + username + "\" already exists.");
+                            outWriter.println("Please input your username: ");
+                        }
                     } else {
-                        //Send error to client saying that the username already exists.
-                        outWriter.println("Username \"" + username + "\" already exists.");
+                        isUsernameValid = false;
+
+                        //Send error to client saying that the username can't have spaces.
+                        outWriter.println("Your username can not have spaces.");
                         outWriter.println("Please input your username: ");
                     }
                 } else {
                     isUsernameValid = false;
 
                     //Send error to client saying that the username can't have spaces.
-                    outWriter.println("Your username can not have spaces.");
+                    outWriter.println("Your username can not be blank.");
                     outWriter.println("Please input your username: ");
                 }
             } while (!isUsernameValid);
