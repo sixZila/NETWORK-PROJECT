@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -58,7 +59,11 @@ public class ServerConnection implements Runnable {
                     case "\"ACCEPT\"":
                         acceptUser(input[1]);
                         break;
+                    case "\"UNFOLLOW\"":
+                        unfollowUser(input[1]);
+                        break;
                     case "\"FILE\"":
+                        sendFile(input);
                         break;
 
                     //Default: there is not valid command. Meaning: the input is invalid.
@@ -84,7 +89,6 @@ public class ServerConnection implements Runnable {
                     }
                 }
                 break;
-
             }
         }
     }
@@ -150,7 +154,6 @@ public class ServerConnection implements Runnable {
 
         //Traverse the list of followers
         for (String follower : followers) {
-
             //Get the user info of the follower from the client list.
             followerSocket = getClient(follower).getClientSocket();
 
@@ -174,7 +177,7 @@ public class ServerConnection implements Runnable {
             //Initialize the writer to the follower
             DataOutputStream followerWriter = new DataOutputStream(receiverSocket.getOutputStream());
             //Send the message to the follower
-            followerWriter.writeUTF(username + "[" + clientIP.getHostAddress() + "]: " + message);
+            followerWriter.writeUTF(username + " [" + clientIP.getHostAddress() + "] sent you a private message: " + message);
 
             //Send the message to the user.
             outWriter.writeUTF("Your message has been sent to " + input[1] + ".");
@@ -202,10 +205,10 @@ public class ServerConnection implements Runnable {
                         //Initialize the writer to the follower
                         DataOutputStream clientWriter = new DataOutputStream(clientSocket.getOutputStream());
                         //Send the message to the follower
-                        clientWriter.writeUTF(username + "[" + clientIP.getHostAddress() + "] wants to follow you.");
+                        clientWriter.writeUTF(username + " [" + clientIP.getHostAddress() + "] wants to follow you.");
 
                         //Send a confirmation to the client that the message has been sent.
-                        outWriter.writeUTF("The follow request has been sent to " + client.getUsername() + "[" + client.getIPAddress() + "].");
+                        outWriter.writeUTF("The follow request has been sent to " + client.getUsername() + " [" + client.getIPAddress() + "].");
                     } else {
                         //If the client already sent a request to the user, send this message instead.
                         outWriter.writeUTF("You already sent a request to this user.");
@@ -231,17 +234,17 @@ public class ServerConnection implements Runnable {
             if (userInfo.removeRequest(clientName)) {
                 User client = getClient(clientName);
                 Socket clientSocket = client.getClientSocket();
-                
+
                 //Add user to the followers list.
                 userInfo.addFollower(clientName);
 
                 DataOutputStream clientWriter = new DataOutputStream(clientSocket.getOutputStream());
-                
+
                 //Send the message to the user saying that the client already accepted their follow request.
-                clientWriter.writeUTF(username + "[" + clientIP.getHostAddress() + "] accepted your follow request.");
+                clientWriter.writeUTF(username + " [" + clientIP.getHostAddress() + "] accepted your follow request.");
 
                 //Send a confirmation to the client that the user is now following them.
-                outWriter.writeUTF(client.getUsername() + "[" + client.getIPAddress() + "] is now following you.");
+                outWriter.writeUTF(client.getUsername() + " [" + client.getIPAddress() + "] is now following you.");
             } else {
                 //If the request can not be removed, notify that the the user did not send a follow request.
                 outWriter.writeUTF("This user did not send you a follow request.");
@@ -250,6 +253,81 @@ public class ServerConnection implements Runnable {
             //Send this message if the username or IP is the client's
             outWriter.writeUTF("You can not follow yourself.");
         }
+    }
+
+    private void unfollowUser(String clientName) throws IOException {
+
+        //Check if the username is the same as the client's
+        if (!(clientName.equals(username) || clientName.equals(clientIP.getHostAddress()))) {
+
+            //Get the user info of the client
+            User client = getClient(clientName);
+
+            //Check if client exists
+            if (client != null) {
+                //Check if the client is already following the user.
+                if (client.removeFollower(username)) {
+                    //Send a confirmation to the client that the user is now following them.
+                    outWriter.writeUTF("You are not following " + client.getUsername() + " [" + client.getIPAddress() + "] anymore.");
+                } else {
+                    //If the request can not be removed, notify that the the user did not send a follow request.
+                    outWriter.writeUTF("You are not following this user.");
+                }
+            } else {
+                //If the request can not be removed, notify that the the user did not send a follow request.
+                outWriter.writeUTF("The user you are trying to unfollow does not exist.");
+            }
+        } else {
+            //Send this message if the username or IP is the client's
+            outWriter.writeUTF("You can not unfollow yourself.");
+        }
+    }
+
+    private void sendFile(String[] input) throws SocketException, IOException {
+        String directory = buildMessage(input, 1);
+        String fileName = getFileName(directory);
+
+        byte[] outFile = new byte[socket.getReceiveBufferSize()];
+        int bytesRead = inReader.read(outFile, 0, outFile.length);
+
+        ArrayList<String> followers = userInfo.getFollowers();
+        Socket followerSocket;
+
+        for (String follower : followers) {
+
+            //Get the user info of the follower from the client list.
+            followerSocket = getClient(follower).getClientSocket();
+
+            //Initialize the writer to the follower
+            DataOutputStream followerWriter = new DataOutputStream(followerSocket.getOutputStream());
+            //Send the message to the follower
+            followerWriter.writeUTF(username + " [" + clientIP.getHostAddress() + "] sent a file saved at C:/NETWORK/" + fileName);
+            followerWriter.write(outFile, 0, bytesRead);
+        }
+        //Send a confirmation to the client that the message has been posted.
+        outWriter.writeUTF("Your file has been sent to your followers.");
+    }
+
+    //Get the file name from the a directory.
+    private String getFileName(String input) {
+        boolean fileNameBuilt = false;
+        StringBuilder name = new StringBuilder();
+        int index = input.length() - 1;
+
+        while (!fileNameBuilt) {
+            if (index != -1) {
+                if (!(input.charAt(index) == '/' || input.charAt(index) == '\\')) {
+                    name.append(input.charAt(index));
+                    index--;
+                } else {
+                    fileNameBuilt = true;
+                }
+            } else {
+                fileNameBuilt = true;
+            }
+        }
+        name = name.reverse();
+        return name.toString();
     }
 
     private User getClient(String clientName) {
@@ -262,7 +340,6 @@ public class ServerConnection implements Runnable {
                 break;
             }
         }
-
         return user;
     }
 
@@ -277,7 +354,6 @@ public class ServerConnection implements Runnable {
                 message.append(" ");
             }
         }
-
         return message.toString();
     }
 }

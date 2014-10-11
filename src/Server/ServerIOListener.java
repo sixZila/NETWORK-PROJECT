@@ -211,18 +211,6 @@ public class ServerIOListener implements Runnable {
             int bytesRead = inputStream.read(outFile, 0, outFile.length);
 
             /////
-            //Open writer to the follower
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            OutputStream fileSender = socket.getOutputStream();
-
-            //Send the message to follower.
-            writer.println(username + " posted a file from " + clientIP.getHostAddress() + " saved at C:/NETWORK/" + fileName);
-
-            //Send the file to the follower
-            fileSender.write(outFile, 0, outFile.length);
-            fileSender.flush();
-
-            /////
             //Traverse the followers.
             for (String key : userInfo.getFollowers()) {
 
@@ -239,8 +227,8 @@ public class ServerIOListener implements Runnable {
                 Socket followerSocket = follower.getClientSocket();
 
                 //Open writer to the follower
-                //PrintWriter writer = new PrintWriter(followerSocket.getOutputStream(), true);
-                //OutputStream fileSender = followerSocket.getOutputStream();
+                PrintWriter writer = new PrintWriter(followerSocket.getOutputStream(), true);
+                OutputStream fileSender = followerSocket.getOutputStream();
                 //Send the message to follower.
                 writer.println(username + " posted a file from " + clientIP.getHostAddress() + " saved at C:/NETWORK/" + getFileName(fileName));
 
