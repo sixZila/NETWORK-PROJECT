@@ -15,9 +15,11 @@ public class ClientInputListener implements Runnable {
 
     private final DataOutputStream out;
     private final Scanner inputScanner;
+    private final Socket socket;
 
     public ClientInputListener(Socket socket, Scanner inputScanner) throws IOException {
         this.inputScanner = inputScanner;
+        this.socket = socket;
         out = new DataOutputStream(socket.getOutputStream());
     }
 
@@ -39,21 +41,25 @@ public class ClientInputListener implements Runnable {
 
                         //Get bytes of the file to be sent
                         byte[] outFile = new byte[(int) file.length()];
-                        FileInputStream fileInput = new FileInputStream(file);
-                        BufferedInputStream fileReader = new BufferedInputStream(fileInput);
+                        if (file.length() < socket.getReceiveBufferSize()) {
+                            FileInputStream fileInput = new FileInputStream(file);
+                            BufferedInputStream fileReader = new BufferedInputStream(fileInput);
 
-                        //Send the message
-                        out.writeUTF(message);
+                            //Send the message
+                            out.writeUTF(message);
 
-                        //Read the file
-                        fileReader.read(outFile, 0, outFile.length);
+                            //Read the file
+                            fileReader.read(outFile, 0, outFile.length);
 
-                        //Send the file
-                        out.write(outFile, 0, outFile.length);
+                            //Send the file
+                            out.write(outFile, 0, outFile.length);
 
-                        //Flush buffer
-                        out.flush();
-                        fileReader.close();
+                            //Flush buffer
+                            out.flush();
+                            fileReader.close();
+                        } else {
+                            System.out.println("Error: file is too large.");
+                        }
                     } catch (ArrayIndexOutOfBoundsException e) {
                         out.writeUTF(message);
                     } catch (FileNotFoundException ex) {
