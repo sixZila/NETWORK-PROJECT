@@ -70,4 +70,13 @@ public class User {
     public boolean equals(String input) {
         return (IPAddress.equals(input) || username.equals(input));
     }
+
+    public String getIPAddress() {
+        return IPAddress;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
 }
