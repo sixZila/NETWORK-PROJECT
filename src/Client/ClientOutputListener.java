@@ -5,19 +5,16 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Socket;
 
 public class ClientOutputListener implements Runnable {
 
     private final DataInputStream in;
-    private final InputStream inputStream;
     private final Socket socket;
 
     public ClientOutputListener(Socket socket) throws IOException {
         this.socket = socket;
-        inputStream = socket.getInputStream();
-        in = new DataInputStream(inputStream);
+        in = new DataInputStream(socket.getInputStream());
     }
 
     @Override

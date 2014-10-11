@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -15,15 +14,11 @@ import java.util.logging.Logger;
 public class ClientInputListener implements Runnable {
 
     private final DataOutputStream out;
-    private final Socket socket;
-    private final OutputStream outputStream;
     private final Scanner inputScanner;
 
     public ClientInputListener(Socket socket, Scanner inputScanner) throws IOException {
-        this.socket = socket;
         this.inputScanner = inputScanner;
-        outputStream = socket.getOutputStream();
-        out = new DataOutputStream(outputStream);
+        out = new DataOutputStream(socket.getOutputStream());
     }
 
     @Override
