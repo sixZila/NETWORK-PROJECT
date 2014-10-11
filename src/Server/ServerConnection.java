@@ -48,22 +48,46 @@ public class ServerConnection implements Runnable {
                 //Check the command of the user.
                 switch (input[0]) {
                     case "\"POST\"":
-                        postMessage(input);
+                        if (input.length > 1) {
+                            postMessage(input);
+                        } else {
+                            outWriter.writeUTF("There is no message to be posted.");
+                        }
                         break;
                     case "\"PM\"":
-                        personalMessage(input);
+                        if (input.length > 2) {
+                            personalMessage(input);
+                        } else {
+                            outWriter.writeUTF("There is no message to be sent.");
+                        }
                         break;
                     case "\"FOLLOW\"":
-                        followerUser(input[1]);
+                        if (input.length > 1) {
+                            followerUser(input[1]);
+                        } else {
+                            outWriter.writeUTF("There is no username specified to send a follow request.");
+                        }
                         break;
                     case "\"ACCEPT\"":
-                        acceptUser(input[1]);
+                        if (input.length > 1) {
+                            acceptUser(input[1]);
+                        } else {
+                            outWriter.writeUTF("There is no username specified to accept the follow request.");
+                        }
                         break;
                     case "\"UNFOLLOW\"":
-                        unfollowUser(input[1]);
+                        if (input.length > 1) {
+                            unfollowUser(input[1]);
+                        } else {
+                            outWriter.writeUTF("There is no username specified to unfollow.");
+                        }
                         break;
                     case "\"FILE\"":
-                        sendFile(input);
+                        if (input.length > 1) {
+                            sendFile(input);
+                        } else {
+                            outWriter.writeUTF("There is no file specified to be sent.");
+                        }
                         break;
 
                     //Default: there is not valid command. Meaning: the input is invalid.
@@ -171,9 +195,11 @@ public class ServerConnection implements Runnable {
         Socket receiverSocket;
         String message = buildMessage(input, 2);
 
-        receiverSocket = getClient(input[1]).getClientSocket();
+        User client = getClient(input[1]);
 
-        if (receiverSocket != null) {
+        if (client != null) {
+            receiverSocket = client.getClientSocket();
+
             //Initialize the writer to the follower
             DataOutputStream followerWriter = new DataOutputStream(receiverSocket.getOutputStream());
             //Send the message to the follower

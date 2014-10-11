@@ -55,7 +55,7 @@ public class ClientInputListener implements Runnable {
                         out.flush();
                         fileReader.close();
                     } catch (ArrayIndexOutOfBoundsException e) {
-
+                        out.writeUTF(message);
                     } catch (FileNotFoundException ex) {
                         System.out.println("Error: file not found.");
                     } catch (IOException ex) {
