@@ -334,8 +334,10 @@ public class ServerConnection implements Runnable {
             DataOutputStream fileSender = new DataOutputStream(followerSocket.getOutputStream());
             //Send the message to the follower
             followerWriter.println(username + " [" + clientIP.getHostAddress() + "] sent a file saved at C:/NETWORK/" + fileName);
-
+              
             fileSender.write(outFile, 0, bytesRead);
+            fileSender.flush();
+
         }
         //Send a confirmation to the client that the message has been posted.
         outWriter.println("Your file has been sent to your followers.");
