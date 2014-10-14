@@ -261,25 +261,30 @@ public class ServerConnection implements Runnable {
     private void acceptUser(String clientName) throws IOException {
         if (!(clientName.equals(username) || clientName.equals(clientIP.getHostAddress()))) {
 
-            //Remove the follow request
-            if (userInfo.removeRequest(clientName)) {
-                User client = getClient(clientName);
-                Socket clientSocket = client.getClientSocket();
+            User client = getClient(clientName);
+            if (client != null) {
+                //Remove the follow request
+                if (userInfo.removeRequest(client.getUsername())) {
+                    Socket clientSocket = client.getClientSocket();
 
-                //Add user to the followers list.
-                userInfo.addFollower(clientName);
+                    //Add user to the followers list.
+                    userInfo.addFollower(client.getUsername());
 
-                PrintWriter clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
+                    PrintWriter clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
 
-                //Send the message to the user saying that the client already accepted their follow request.
-                clientWriter.println(username + " [" + clientIP.getHostAddress() + "] accepted your follow request.");
+                    //Send the message to the user saying that the client already accepted their follow request.
+                    clientWriter.println(username + " [" + clientIP.getHostAddress() + "] accepted your follow request.");
 
-                //Send a confirmation to the client that the user is now following them.
-                outWriter.println(client.getUsername() + " [" + client.getIPAddress() + "] is now following you.");
+                    //Send a confirmation to the client that the user is now following them.
+                    outWriter.println(client.getUsername() + " [" + client.getIPAddress() + "] is now following you.");
+                } else {
+                    //If the request can not be removed, notify that the the user did not send a follow request.
+                    outWriter.println("This user did not send you a follow request.");
+                }
             } else {
                 //If the request can not be removed, notify that the the user did not send a follow request.
-                outWriter.println("This user did not send you a follow request.");
-            }
+                outWriter.println("This user does not exist.");
+            } 
         } else {
             //Send this message if the username or IP is the client's
             outWriter.println("You can not follow yourself.");
@@ -287,10 +292,8 @@ public class ServerConnection implements Runnable {
     }
 
     private void unfollowUser(String clientName) throws IOException {
-
         //Check if the username is the same as the client's
         if (!(clientName.equals(username) || clientName.equals(clientIP.getHostAddress()))) {
-
             //Get the user info of the client
             User client = getClient(clientName);
 
@@ -299,7 +302,7 @@ public class ServerConnection implements Runnable {
                 //Check if the client is already following the user.
                 if (client.removeFollower(username)) {
                     //Send a confirmation to the client that the user is now following them.
-                    outWriter.println("You are not following " + client.getUsername() + " [" + client.getIPAddress() + "] anymore.");
+                    outWriter.println("You have unfollowed " + client.getUsername() + " [" + client.getIPAddress() + "] anymore.");
                 } else {
                     //If the request can not be removed, notify that the the user did not send a follow request.
                     outWriter.println("You are not following this user.");
@@ -334,7 +337,7 @@ public class ServerConnection implements Runnable {
             DataOutputStream fileSender = new DataOutputStream(followerSocket.getOutputStream());
             //Send the message to the follower
             followerWriter.println(username + " [" + clientIP.getHostAddress() + "] sent a file saved at C:/NETWORK/" + fileName);
-              
+
             fileSender.write(outFile, 0, bytesRead);
             fileSender.flush();
 
