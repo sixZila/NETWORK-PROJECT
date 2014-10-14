@@ -120,7 +120,6 @@ public class ServerConnection implements Runnable {
     //The method will try to log in the user to the system.
     private void loginUser() {
         boolean isUserLoggedIn;
-
         try {
             //Send welcome message to the client.
             outWriter.writeUTF("Welcome please enter your username: ");
@@ -256,24 +255,31 @@ public class ServerConnection implements Runnable {
     private void acceptUser(String clientName) throws IOException {
         if (!(clientName.equals(username) || clientName.equals(clientIP.getHostAddress()))) {
 
-            //Remove the follow request
-            if (userInfo.removeRequest(clientName)) {
-                User client = getClient(clientName);
-                Socket clientSocket = client.getClientSocket();
+            //Get the user info of the client
+            User client = getClient(clientName);
 
-                //Add user to the followers list.
-                userInfo.addFollower(clientName);
+            if (client != null) {
+                //Remove the follow request
+                if (userInfo.removeRequest(client.getUsername())) {
+                    Socket clientSocket = client.getClientSocket();
 
-                DataOutputStream clientWriter = new DataOutputStream(clientSocket.getOutputStream());
+                    //Add user to the followers list.
+                    userInfo.addFollower(client.getUsername());
 
-                //Send the message to the user saying that the client already accepted their follow request.
-                clientWriter.writeUTF(username + " [" + clientIP.getHostAddress() + "] accepted your follow request.");
+                    DataOutputStream clientWriter = new DataOutputStream(clientSocket.getOutputStream());
 
-                //Send a confirmation to the client that the user is now following them.
-                outWriter.writeUTF(client.getUsername() + " [" + client.getIPAddress() + "] is now following you.");
+                    //Send the message to the user saying that the client already accepted their follow request.
+                    clientWriter.writeUTF(username + " [" + clientIP.getHostAddress() + "] accepted your follow request.");
+
+                    //Send a confirmation to the client that the user is now following them.
+                    outWriter.writeUTF(client.getUsername() + " [" + client.getIPAddress() + "] is now following you.");
+                } else {
+                    //If the request can not be removed, notify that the the user did not send a follow request.
+                    outWriter.writeUTF("This user did not send you a follow request.");
+                }
             } else {
                 //If the request can not be removed, notify that the the user did not send a follow request.
-                outWriter.writeUTF("This user did not send you a follow request.");
+                outWriter.writeUTF("The user you have indicated does not exist.");
             }
         } else {
             //Send this message if the username or IP is the client's
