@@ -1,7 +1,10 @@
 package Server;
 
+import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -9,6 +12,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import javax.imageio.ImageIO;
 
 public class ServerConnection implements Runnable {
 
@@ -68,7 +72,7 @@ public class ServerConnection implements Runnable {
                             outWriter.writeUTF("There is no username specified to send a follow request.");
                         }
                         break;
-                    case "\"ACCEPT\"":
+                    case "\"APPROVE\"":
                         if (input.length > 1) {
                             acceptUser(input[1]);
                         } else {
@@ -85,6 +89,13 @@ public class ServerConnection implements Runnable {
                     case "\"FILE\"":
                         if (input.length > 1) {
                             sendFile(input);
+                        } else {
+                            outWriter.writeUTF("There is no file specified to be sent.");
+                        }
+                        break;
+                    case "\"IMG\"":
+                        if (input.length > 1) {
+                            getImage();
                         } else {
                             outWriter.writeUTF("There is no file specified to be sent.");
                         }
@@ -338,6 +349,29 @@ public class ServerConnection implements Runnable {
         }
         //Send a confirmation to the client that the message has been posted.
         outWriter.writeUTF("Your file has been sent to your followers.");
+    }
+
+    private void getImage() throws SocketException, IOException {
+        File file = new File("C:/SERVER/");
+        file.mkdir();
+
+        //Make the file
+        file = new File("C:/SERVER/" + username + ".jpg");
+        file.createNewFile();
+
+        FileOutputStream imageOutput = new FileOutputStream(file);
+        int bytesRead;
+        long size = inReader.readLong();
+        byte[] buffer = new byte[1024];
+        
+        while (size > 0 && (bytesRead = inReader.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+            imageOutput.write(buffer, 0, bytesRead);
+            size -= bytesRead;
+        }
+
+        imageOutput.close();
+
+        outWriter.writeUTF("You have updated your profile picture.");
     }
 
     //Get the file name from the a directory.
