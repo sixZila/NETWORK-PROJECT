@@ -1,6 +1,5 @@
 package Server;
 
-import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -12,7 +11,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import javax.imageio.ImageIO;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ServerConnection implements Runnable {
 
@@ -224,7 +224,6 @@ public class ServerConnection implements Runnable {
     }
 
     private void followerUser(String clientName) throws IOException {
-
         if (!(clientName.equals(username) || clientName.equals(clientIP.getHostAddress()))) {
             //Get the user info of the client
             User client = getClient(clientName);
@@ -330,6 +329,7 @@ public class ServerConnection implements Runnable {
         String directory = buildMessage(input, 1);
         String fileName = getFileName(directory);
 
+        //long fileSize = inReader.readLong();
         byte[] outFile = new byte[socket.getReceiveBufferSize()];
         int bytesRead = inReader.read(outFile, 0, outFile.length);
 
@@ -351,25 +351,8 @@ public class ServerConnection implements Runnable {
         outWriter.writeUTF("Your file has been sent to your followers.");
     }
 
-    private void getImage() throws SocketException, IOException {
-        File file = new File("C:/SERVER/");
-        file.mkdir();
-
-        //Make the file
-        file = new File("C:/SERVER/" + username + ".jpg");
-        file.createNewFile();
-
-        FileOutputStream imageOutput = new FileOutputStream(file);
-        int bytesRead;
-        long size = inReader.readLong();
-        byte[] buffer = new byte[1024];
-        
-        while (size > 0 && (bytesRead = inReader.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
-            imageOutput.write(buffer, 0, bytesRead);
-            size -= bytesRead;
-        }
-
-        imageOutput.close();
+    private void getImage() throws IOException {
+        saveFile(1, null);
 
         outWriter.writeUTF("You have updated your profile picture.");
     }
@@ -394,6 +377,50 @@ public class ServerConnection implements Runnable {
         }
         name = name.reverse();
         return name.toString();
+    }
+
+    private void saveFile(int mod, String[] input) {
+        try {
+            String fileName = "";
+            String directory = "";
+
+            switch (mod) {
+                //Case 0 send file.
+                case 0:
+                    directory = "C:/SERVER/FILES/";
+                    fileName = getFileName(buildMessage(input, 1));
+                    break;
+                //Case 1 set profile picture
+                case 1:
+                    directory = "C:/SERVER/PROFILE/";
+                    fileName = "C:/SERVER/PROFILE/" + username + ".jpg";
+                    break;
+            }
+
+            File file = new File("C:/SERVER/");
+            file.mkdir();
+            
+            file = new File(directory);
+            file.mkdir();
+
+            //Make the file
+            file = new File(fileName);
+            file.createNewFile();
+
+            FileOutputStream fileOutput = new FileOutputStream(file);
+            int bytesRead;
+            long size = inReader.readLong();
+            byte[] buffer = new byte[1024];
+
+            while (size > 0 && (bytesRead = inReader.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+                fileOutput.write(buffer, 0, bytesRead);
+                size -= bytesRead;
+            }
+
+            fileOutput.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private User getClient(String clientName) {

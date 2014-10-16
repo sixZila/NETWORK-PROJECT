@@ -1,6 +1,5 @@
 package Client;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -67,26 +66,27 @@ public class ClientInputListener implements Runnable {
                         } catch (FileNotFoundException ex) {
                             System.out.println("Error: file not found.");
                         } catch (IOException ex) {
-                            Logger.getLogger(ClientInputListener.class.getName()).log(Level.SEVERE, null, ex);
+                            //Logger.getLogger(ClientInputListener.class.getName()).log(Level.SEVERE, null, ex);
                         }
                         break;
                     case "\"IMG\"":
                         try {
                             File file = new File(buildDirectory(sendMessage, 1));
-
+                            //Read the file from disk
                             FileInputStream fileInput = new FileInputStream(file);
                             BufferedInputStream fileReader = new BufferedInputStream(fileInput);
 
                             byte[] outFile = new byte[(int) file.length()];
 
+                            //Send the message to the server
                             out.writeUTF(message);
 
+                            //Send the file size to the server
                             out.writeLong(file.length());
-
+                            //Read the file
                             fileReader.read(outFile, 0, outFile.length);
-
+                            //Send the file to the server
                             out.write(outFile, 0, outFile.length);
-
                             out.flush();
 
                             fileReader.close();
@@ -95,7 +95,7 @@ public class ClientInputListener implements Runnable {
                         } catch (FileNotFoundException ex) {
                             System.out.println("Error: file not found.");
                         } catch (IOException ex) {
-                            Logger.getLogger(ClientInputListener.class.getName()).log(Level.SEVERE, null, ex);
+                            //Logger.getLogger(ClientInputListener.class.getName()).log(Level.SEVERE, null, ex);
                         }
                         break;
                     default:
