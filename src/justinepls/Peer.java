@@ -4,8 +4,6 @@ import Client.ClientInputListener;
 import Client.ClientOutputListener;
 import Server.ServerThread;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -16,7 +14,6 @@ import java.util.logging.Logger;
 
 public final class Peer {
 
-    private String address;
     private InetAddress IP;
     private Socket socket;
     private Thread inThread, outThread;
@@ -25,8 +22,6 @@ public final class Peer {
 
         try {
             this.IP = InetAddress.getLocalHost();
-            this.address = IP.getHostAddress();
-
         } catch (UnknownHostException u) {
             System.out.println("An Error Occured" + u);
         }
@@ -43,20 +38,16 @@ public final class Peer {
         //Print empty space
         System.out.println();
 
-        System.out.println("Welcome! Type \"scan\" to automatically search for the server.");
-        System.out.println("Type \"start\" to run as a server.");
+        System.out.println("Welcome! Type \"start\" to run as a server.");
 
         do {
             System.out.print("Input the IP Address of the server: ");
             input = s.nextLine();
 
             switch (input) {
-                case "scan":
-                    serverRunning = scanNetwork();
-                    break;
                 case "start":
                     try {
-                        Socket temp = new Socket("127.0.0.1" ,1234);
+                        Socket temp = new Socket("127.0.0.1", 1234);
                         System.out.println("There's a server already running.");
                         serverRunning = false;
                     } catch (IOException ex) {
@@ -94,46 +85,5 @@ public final class Peer {
         } catch (IOException ex) {
 
         }
-    }
-
-    //Scan the network for a server
-    public boolean scanNetwork() {
-        byte[] outData = new byte[1024];
-        byte[] inData = new byte[1024];
-
-        System.out.println("Searching for Server...");
-
-        DatagramSocket clientSocket;
-        try {
-            DatagramPacket inPacket = new DatagramPacket(inData, inData.length);
-            clientSocket = new DatagramSocket();
-            //Set a timeout of 4 seconds.
-            clientSocket.setSoTimeout(4000);
-
-            //Message for sending to server (needed to send packet).
-            String sentence = "";
-            outData = sentence.getBytes();
-
-            DatagramPacket outPacket = new DatagramPacket(outData, outData.length, IP, 1234);
-
-            //Send data to server.
-            clientSocket.send(outPacket);
-            //Recieve Data from server, if no data is recieved after 4 seconds, no server exists.
-            clientSocket.receive(inPacket);
-
-            //Print a successful connection.
-            System.out.println(new String(inPacket.getData()));
-
-            //Instantiate Socket to server.
-            socket = new Socket(inPacket.getAddress(), 1234);
-            clientSocket.close();
-            return true;
-        } catch (SocketException ex) {
-            System.out.println("Error");
-        } catch (IOException ex) {
-            System.out.println("Theres no server running.");
-            return false;
-        }
-        return false;
     }
 }

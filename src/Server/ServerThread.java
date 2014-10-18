@@ -20,9 +20,6 @@ public class ServerThread implements Runnable {
             server = new ServerSocket(1234);
             System.out.println("Server started on port: " + server.getLocalPort());
 
-            Thread UDPServer = new Thread(new UDPThread());
-            UDPServer.start();
-
             //Accept clients.
             while (true) {
                 Socket client = server.accept();

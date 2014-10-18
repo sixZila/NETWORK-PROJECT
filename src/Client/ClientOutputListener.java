@@ -27,9 +27,10 @@ public class ClientOutputListener implements Runnable {
 
                 if (temp.contains("sent a file saved at C:/NETWORK/")) {
                     byte[] inFile = new byte[socket.getReceiveBufferSize()];
+
                     //Read the byte size
                     int bytesRead = in.read(inFile, 0, inFile.length);
-                    
+
                     //Initialize File Name
                     String fileName = getFileName(temp);
 
@@ -37,16 +38,43 @@ public class ClientOutputListener implements Runnable {
                     File file = new File("C:/NETWORK/");
                     file.mkdir();
 
+                    file = new File("C:/NETWORK/FILES");
+                    file.mkdir();
+
                     //Make the file
-                    file = new File("C:/NETWORK/" + fileName);
+                    file = new File("C:/NETWORK/FILES/" + fileName);
                     file.createNewFile();
 
-                    FileOutputStream fileOutput = new FileOutputStream("C:/NETWORK/" + fileName);
+                    FileOutputStream fileOutput = new FileOutputStream("C:/NETWORK/FILES/" + fileName);
                     BufferedOutputStream fileWriter = new BufferedOutputStream(fileOutput);
 
                     //Write the file
                     fileWriter.write(inFile, 0, bytesRead);
                     fileWriter.close();
+                } else if (temp.contains("Profile picture saved at C:/NETWORK/PROFILE/")) {
+                    File file = new File("C:/NETWORK/");
+                    file.mkdir();
+
+                    file = new File("C:/NETWORK/PROFILE/");
+                    file.mkdir();
+
+                    String fileName = getFileName(temp);
+
+                    //Make the file
+                    file = new File("C:/NETWORK/PROFILE/" + fileName + ".jpg");
+                    file.createNewFile();
+
+                    FileOutputStream fileOutput = new FileOutputStream(file);
+                    int bytesRead;
+                    long size = in.readLong();
+                    byte[] buffer = new byte[1024];
+
+                    while (size > 0 && (bytesRead = in.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+                        fileOutput.write(buffer, 0, bytesRead);
+                        size -= bytesRead;
+                    }
+
+                    fileOutput.close();
                 }
             }
         } catch (IOException ex) {

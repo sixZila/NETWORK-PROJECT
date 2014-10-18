@@ -25,7 +25,6 @@ public class ClientInputListener implements Runnable {
 
     @Override
     public void run() {
-
         String message;
 
         while (true) {
@@ -33,7 +32,6 @@ public class ClientInputListener implements Runnable {
             message = inputScanner.nextLine();
 
             try {
-
                 String[] sendMessage = message.split("\\s");
                 switch (sendMessage[0]) {
                     case "\"FILE\"":
@@ -42,10 +40,11 @@ public class ClientInputListener implements Runnable {
 
                             //Get bytes of the file to be sent
                             byte[] outFile = new byte[(int) file.length()];
+                            
                             if (file.length() < socket.getReceiveBufferSize()) {
                                 FileInputStream fileInput = new FileInputStream(file);
                                 BufferedInputStream fileReader = new BufferedInputStream(fileInput);
-
+                                
                                 //Send the message
                                 out.writeUTF(message);
 
@@ -61,6 +60,7 @@ public class ClientInputListener implements Runnable {
                             } else {
                                 System.out.println("Error: file is too large.");
                             }
+                            
                         } catch (ArrayIndexOutOfBoundsException e) {
                             out.writeUTF(message);
                         } catch (FileNotFoundException ex) {

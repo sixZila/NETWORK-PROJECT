@@ -1,8 +1,10 @@
 package Server;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -244,6 +246,29 @@ public class ServerConnection implements Runnable {
 
                         //Send a confirmation to the client that the message has been sent.
                         outWriter.writeUTF("The follow request has been sent to " + client.getUsername() + " [" + client.getIPAddress() + "].");
+
+                        //Send profile picture of the person
+                        File file = new File("C:/SERVER/PROFILE/" + username + ".jpg");
+
+                        if (file.exists()) {
+                            //Read the file from disk
+                            FileInputStream fileInput = new FileInputStream(file);
+                            BufferedInputStream fileReader = new BufferedInputStream(fileInput);
+
+                            byte[] outFile = new byte[(int) file.length()];
+
+                            clientWriter.writeUTF("Profile picture saved at C:/NETWORK/PROFILE/" + username + ".jpg");
+
+                            //Send the file size to the followee
+                            clientWriter.writeLong(file.length());
+                            //Read the file
+                            fileReader.read(outFile, 0, outFile.length);
+                            //Send the file to the server
+                            clientWriter.write(outFile, 0, outFile.length);
+                            clientWriter.flush();
+
+                            fileReader.close();
+                        }
                     } else {
                         //If the client already sent a request to the user, send this message instead.
                         outWriter.writeUTF("You already sent a request to this user.");
@@ -337,7 +362,6 @@ public class ServerConnection implements Runnable {
         Socket followerSocket;
 
         for (String follower : followers) {
-
             //Get the user info of the follower from the client list.
             followerSocket = getClient(follower).getClientSocket();
 
@@ -346,6 +370,7 @@ public class ServerConnection implements Runnable {
             //Send the message to the follower
             followerWriter.writeUTF(username + " [" + clientIP.getHostAddress() + "] sent a file saved at C:/NETWORK/" + fileName);
             followerWriter.write(outFile, 0, bytesRead);
+            followerWriter.flush();
         }
         //Send a confirmation to the client that the message has been posted.
         outWriter.writeUTF("Your file has been sent to your followers.");
@@ -375,8 +400,10 @@ public class ServerConnection implements Runnable {
                 fileNameBuilt = true;
             }
         }
+
         name = name.reverse();
         return name.toString();
+
     }
 
     private void saveFile(int mod, String[] input) {
@@ -399,7 +426,7 @@ public class ServerConnection implements Runnable {
 
             File file = new File("C:/SERVER/");
             file.mkdir();
-            
+
             file = new File(directory);
             file.mkdir();
 
@@ -420,6 +447,7 @@ public class ServerConnection implements Runnable {
             fileOutput.close();
         } catch (IOException ex) {
             Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Error");
         }
     }
 
